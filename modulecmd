@@ -1,0 +1,29 @@
+#!/usr/bin/env python
+
+import sys
+import tempfile
+
+import pyenv
+
+# TODO: figure out which shell...
+shell = pyenv.TcshShell()
+env = pyenv.Environment(shell)
+
+# TODO: set up a better module database
+mdb = pyenv.ModuleDatabase()
+
+if (sys.argv[1] == 'load'):
+    pyenv.Actions.load(sys.argv[2:], env, shell, mdb)
+if (sys.argv[1] == 'loaded'):
+    pyenv.Actions.loaded(sys.argv[2:], env, shell, mdb)
+if (sys.argv[1] == 'unload'):
+    pyenv.Actions.unload(sys.argv[2:], env, shell, mdb)
+
+wlog = pyenv.WarningLog.get_logger()
+
+for log_msg in wlog.get_log():
+    shell.message(log_msg)
+
+env.shutdown()
+
+sys.stdout.write("\n".join(shell.dump_state()) + "\n")
