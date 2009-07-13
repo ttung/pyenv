@@ -10,22 +10,21 @@ def worker():
     all_actions = pyenv.Actions.get_all_actions()
 
     try:
-        pyenv.options.TopLevelOptions.parse(sys.argv, all_actions)
-    except pyenv.OptionParsingError, e:
+        pyenv.options.TopLevelOptions.parse(sys.argv, all_actions, pyenv.shell_mapper.keys())
+    except pyenv.OptionParsingError as e:
         # no shell at this point, so we've already dumped everything to stderr.  just reraise.
         raise
 
     # TODO: set up a better module database, based on PYENV_PATH
     mdb = pyenv.ModuleDatabase()
 
-    # TODO: figure out which shell...
-    shell = pyenv.TcshShell()
+    # figure out which shell...
+    shell = pyenv.shell_mapper[pyenv.options.TopLevelOptions.shell]()
 
     env = pyenv.Environment(shell, mdb)
 
-    action_requested = sys.argv[1]          # TODO: this should be given to us by the option
-                                            # parser.
-    action_arguments = sys.argv[2:]
+    action_requested = pyenv.options.TopLevelOptions.action
+    action_arguments = pyenv.options.TopLevelOptions.action_options
 
     assert(action_requested in all_actions)
     action_processor = all_actions[action_requested]
@@ -48,7 +47,7 @@ def main():
 
         # TODO: write this to a temp file.
         sys.stdout.write("\n".join(shell_state) + "\n")
-    except pyenv.OptionParsingError, e:
+    except pyenv.OptionParsingError as e:
         # ignore the error if it gets this far up.
         pass
     finally:

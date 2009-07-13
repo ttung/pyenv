@@ -35,12 +35,14 @@ def munge_parser(parser, dest_prefix, exit_routine, stdout):
 
 class TopLevelOptions(object):
     @staticmethod
-    def parse(args, valid_actions, dest_prefix = "tlo_"):
+    def parse(args, valid_actions, valid_shells, dest_prefix = "tlo_"):
         import optparse
 
         parser = optparse.OptionParser(usage="")
 
-        def escape_hatch(arg = 0):
+        def escape_hatch(arg = 0, msg = None):
+            if (msg is not None):
+                sys.stdout.write(msg)
             raise OptionParsingError("escape hatch")
 
         # define a function to add options
@@ -49,7 +51,9 @@ class TopLevelOptions(object):
                                   sys.stderr)
 
         # populate parser here, with all dests starting with dest_prefix.
-        parser.add_option("-s", "--shell", dest="shell")
+        parser.add_option("-s", "--shell", type="choice",
+                          choices=valid_shells, 
+                          dest="shell")
 
         # stop when the first non-option argument
         # is encountered.
@@ -77,7 +81,7 @@ class TopLevelOptions(object):
             if (not key.startswith(dest_prefix)):
                 continue
 
-            setattr(TopLevelOptions, key[3:], getattr(options, key))
+            setattr(TopLevelOptions, key[len(dest_prefix):], getattr(options, key))
 
         try:
             if (len(leftover) == 0):
