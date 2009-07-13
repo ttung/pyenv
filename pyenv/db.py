@@ -13,12 +13,18 @@ class ModuleDatabase(object):
             pyenv_root = os.path.dirname(os.path.dirname(identity))
             module_db_path = os.path.join(pyenv_root, "modules")
 
-        self.module_db_path = module_db_path
+        self.module_db_path = module_db_path.split(os.pathsep)
         self.database_cache = dict()
 
 
-    def populate_db_cache(self):
-        for path in self.module_db_path.split(os.pathsep):
+    def reset_db_cache(self):
+        self.database_cache = dict()
+
+
+    # populate the db cache.  if filter is callable, then it is called with the module
+    # name.  if that function returns False, then it is not added to the db cache.
+    def populate_db_cache(self, filter = None):
+        for path in self.module_db_path:
             for root, dirs, files in os.walk(path, followlinks = True):
                 for name in files:
                     # only .py files.
@@ -39,6 +45,15 @@ class ModuleDatabase(object):
 
                     module_name = '.'.join(os.path.split(stripped_path))
 
+                    # already exists, keep going.
+                    if (module_name in self.database_cache):
+                        continue
+
+                    # apply the filter.
+                    if (callable(filter) and
+                        filter(module_name) == False):
+                        continue
+
                     self.database_cache[module_name] = module_fullpath
 
 
@@ -58,6 +73,7 @@ class ModuleDatabase(object):
         return None
 
 
+    # this actually loads the module code.  this does *not* execute the module load code.
     def load_module(self, module_name):
         module_path = self.find_module(module_name)
         short_module_name = module_name.split(".")[-1]
@@ -67,3 +83,23 @@ class ModuleDatabase(object):
 
         module = __import__(short_module_name, globals(), locals(), [], -1)
         return module.Module(module_name)
+
+
+    # this retrieves all modules.  if check_syntax is set to True, then we check that the
+    # modules parse correctly and only return those that do.
+    def get_all_modules(self, check_syntax = False):
+        if (check_syntax):
+            def filter(module_name):
+                try:
+                    self.load_module(module_name)
+                except:
+                    return False
+
+                return True
+
+            self.reset_db_cache()
+            self.populate_db_cache(filter)
+        else:
+            self.populate_db_cache()
+
+        return self.database_cache.keys()

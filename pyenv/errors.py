@@ -1,7 +1,13 @@
 # -*- Mode: Python -*- 
 
 
+# raised when the option code has a bug.  dump the exception to stderr.
 class OptionError(Exception):
+    pass
+
+
+# raised when the options don't parse correctly.  dump Log output.
+class OptionParsingError(Exception):
     pass
 
 

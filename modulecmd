@@ -5,25 +5,55 @@ import tempfile
 
 import pyenv
 
-# TODO: figure out which shell...
-shell = pyenv.TcshShell()
-env = pyenv.Environment(shell)
 
-# TODO: set up a better module database
-mdb = pyenv.ModuleDatabase()
+def worker():
+    all_actions = pyenv.Actions.get_all_actions()
 
-if (sys.argv[1] == 'load'):
-    pyenv.Actions.load(sys.argv[2:], env, shell, mdb)
-if (sys.argv[1] == 'loaded'):
-    pyenv.Actions.loaded(sys.argv[2:], env, shell, mdb)
-if (sys.argv[1] == 'unload'):
-    pyenv.Actions.unload(sys.argv[2:], env, shell, mdb)
+    try:
+        pyenv.options.TopLevelOptions.parse(sys.argv, all_actions)
+    except pyenv.OptionParsingError, e:
+        # no shell at this point, so we've already dumped everything to stderr.  just reraise.
+        raise
 
-wlog = pyenv.WarningLog.get_logger()
+    # TODO: set up a better module database, based on PYENV_PATH
+    mdb = pyenv.ModuleDatabase()
 
-for log_msg in wlog.get_log():
-    shell.message(log_msg)
+    # TODO: figure out which shell...
+    shell = pyenv.TcshShell()
 
-env.shutdown()
+    env = pyenv.Environment(shell, mdb)
 
-sys.stdout.write("\n".join(shell.dump_state()) + "\n")
+    action_requested = sys.argv[1]          # TODO: this should be given to us by the option
+                                            # parser.
+    action_arguments = sys.argv[2:]
+
+    assert(action_requested in all_actions)
+    action_processor = all_actions[action_requested]
+    action_processor(action_arguments, env, shell, mdb)
+
+    env.shutdown()
+
+    wlog = pyenv.WarningLog.get_logger()
+
+    for log_msg in wlog.get_log():
+        shell.message(log_msg)
+
+    return shell.dump_state()
+
+
+
+def main():
+    try:
+        shell_state = worker()
+
+        # TODO: write this to a temp file.
+        sys.stdout.write("\n".join(shell_state) + "\n")
+    except pyenv.OptionParsingError, e:
+        # ignore the error if it gets this far up.
+        pass
+    finally:
+        # TODO: write the name of the temp file to the shell.
+        pass
+
+if __name__ == "__main__":
+    main()

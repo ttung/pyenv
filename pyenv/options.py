@@ -2,15 +2,16 @@
 
 import sys
 
+from errors import *
 
-def munge_parser(parser, dest_prefix):
-    def add_option(opt_str, **kwargs):
+def munge_parser(parser, dest_prefix, exit_routine, stdout):
+    def add_option(opt_str, *args, **kwargs):
         if ("dest" not in kwargs):
             raise OptionError("all options must have an explicit destination")
 
         kwargs['dest'] = "%s%s" % (dest_prefix, kwargs['dest'])
 
-        return orig_add_option(opt_str, **kwargs)
+        return orig_add_option(opt_str, *args, **kwargs)
 
 
     def set_defaults(self, **kwargs):
@@ -23,7 +24,13 @@ def munge_parser(parser, dest_prefix):
     parser.add_option = add_option
 
     orig_set_defaults = parser.set_defaults
-    parser.add_option = set_defaults
+    parser.set_defaults = set_defaults
+
+    parser.exit = exit_routine
+    old_stdout = sys.stdout
+    sys.stdout = stdout
+
+    return old_stdout
 
 
 class TopLevelOptions(object):
@@ -33,19 +40,25 @@ class TopLevelOptions(object):
 
         parser = optparse.OptionParser(usage="")
 
+        def escape_hatch(arg = 0):
+            raise OptionParsingError("escape hatch")
+
         # define a function to add options
-        munge_parser(parser, dest_prefix)
+        old_stdout = munge_parser(parser, dest_prefix,
+                                  escape_hatch,
+                                  sys.stderr)
 
         # populate parser here, with all dests starting with dest_prefix.
+        parser.add_option("-s", "--shell", dest="shell")
 
         # stop when the first non-option argument
         # is encountered.
-        parser.disable_interspersed_args() 
+        parser.disable_interspersed_args()
 
         # capture the options help
         TopLevelOptions.options_help = parser.format_help()
         def custom_format_help(formatter=None):
-            prog = sys.argv[0]
+            prog = args[0]
             result = ("usage: %s [<options>]"
                       " <action> [<action-options>]\n\n"
                       "%s\n"
@@ -58,7 +71,7 @@ class TopLevelOptions(object):
             return result
         parser.format_help = custom_format_help
 
-        (options, leftover) = parser.parse_args(args)
+        (options, leftover) = parser.parse_args(args[1:])
 
         for key in dir(options):
             if (not key.startswith(dest_prefix)):
@@ -66,13 +79,23 @@ class TopLevelOptions(object):
 
             setattr(TopLevelOptions, key[3:], getattr(options, key))
 
-        if (len(leftover) == 0):
+        try:
+            if (len(leftover) == 0):
+                raise OptionParsingError("no options specified...")
+            TopLevelOptions.action = leftover[0]
+            if (TopLevelOptions.action not in valid_actions):
+                raise OptionParsingError("invalid action specified...")
+        except OptionParsingError, e:
             parser.print_help()
-            sys.exit(0)
+            raise
 
         # determine which action
-        TopLevelOptions.action = leftover[0]
         TopLevelOptions.action_options = leftover[1:]
+
+        # parsing complete, restore stdout.
+        sys.stdout = old_stdout
+
+        return parser
 
 
 class ActionOptions(object):

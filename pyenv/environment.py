@@ -4,13 +4,14 @@ import sys
 from errors import *
 
 class Environment(object):
-    def __init__(self, shell):
+    def __init__(self, shell, db):
         import os
         import pickle
         import base64
 
-        # save the shell
+        # save the shell and the db
         self.shell = shell
+        self.db = db
 
         ix = 0
         env_directory = []
@@ -46,7 +47,8 @@ class Environment(object):
         self.ready = True
 
 
-    # load a module.  may raise ModulePreloadError or ModuleLoadError.
+    # load a module.  may raise ModulePreloadError or ModuleLoadError.  this should
+    # generally not be called externally.
     def load_module(self, module):
         assert(self.ready == True)
 
@@ -54,6 +56,7 @@ class Environment(object):
 
         # preload, then load.
         dependencies = module.preload(self)
+
         module.load(self, self.shell)
 
         # update the loaded modules and the dependency graph.
@@ -68,7 +71,7 @@ class Environment(object):
 
 
     # unload a module from the loaded set.  raise ModuleUnloadError if we can't unload the
-    # module.
+    # module.  this should generally not be called externally.
     def unload_module(self, module):
         assert(self.ready == True)
 
@@ -93,6 +96,33 @@ class Environment(object):
         self.need_env_dump = True
 
 
+    # load a module by name.  may raise ModuleLoadError.
+    def load_module_by_name(self, module_name):
+        if (module_name in self.loaded_modules):
+            raise ModuleLoadError("Module %s already loaded" % module_name)
+        elif (self.db.find_module(module_name)):
+            module = self.db.load_module(module_name)
+            self.load_module(module)
+        else:
+            raise ModuleLoadError("Cannot find module %s" % module_name)
+
+
+    # unload a module from the loaded set.  may raise ModuleNotLoadedError.
+    def unload_module_by_name(self, module_name):
+        if (module_name not in self.loaded_modules):
+            raise ModuleUnloadError("Module %s not loaded" % module_name)
+        elif (module_name in self.dependencies and
+              len(self.dependencies[module_name]) != 0):
+            raise ModuleUnloadError("Module(s) (%s) still depend on %s." % 
+                                    (", ".join(self.dependencies[module_name]),
+                                     module_name))
+        elif (self.db.find_module(module_name)):
+            module = self.db.load_module(module_name)
+            self.unload_module(module)
+        else:
+            raise ModuleUnloadError("Cannot find module %s" % module_name)
+
+
     # swap two modules.  raise ModuleUnloadError if we can't complete the swap.
     def swap_module(self, outgoing_module, incoming_module):
         pass
@@ -112,7 +142,7 @@ class Environment(object):
                 self.shell.remove_env(env_name)
 
             # pickle the state and write it out to the environment.
-            pickled = pickle.dumps((self.loaded_modules, self.dependencies))
+            pickled = pickle.dumps((self.loaded_modules, self.dependencies), -1)
             encoded = base64.b64encode(pickled)
             chunks = [encoded[ix:ix + max_chunk_size]
                       for ix in range(0, len(encoded), max_chunk_size)]

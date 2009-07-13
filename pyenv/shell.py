@@ -82,7 +82,7 @@ class Shell(object):
 
 
     # this should write something to the console.
-    def message(self, message):
+    def write(self, message):
         self.messages.append(message)
 
 
