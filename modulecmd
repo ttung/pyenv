@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.6
 
 import sys
 import tempfile
@@ -39,7 +39,7 @@ def worker():
     wlog = pyenv.WarningLog.get_logger()
 
     for log_msg in wlog.get_log():
-        shell.write("%s\n" % log_msg)
+        shell.write("%s" % log_msg)
 
     shell_state = shell.dump_state()
 
@@ -57,8 +57,12 @@ def main():
 
         # write this to a temp file.
         tfh = tempfile.NamedTemporaryFile(delete=False)
-        tfh.write("\n".join(shell_state) + "\n")
         name = tfh.name
+
+        tfh.write("\n".join(shell_state) + "\n")
+
+        # this should be done in a platform-independent way...
+        tfh.write("rm -f %s\n" % name)
         tfh.close()
     except pyenv.OptionParsingError as e:
         # ignore the error if it gets this far up.

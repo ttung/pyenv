@@ -3,6 +3,8 @@
 import os
 import sys
 
+from errors import *
+
 # recursively find all the py modules in this directory.
 class ModuleDatabase(object):
     def __init__(self):
