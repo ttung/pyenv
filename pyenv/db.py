@@ -5,15 +5,19 @@ import sys
 
 # recursively find all the py modules in this directory.
 class ModuleDatabase(object):
-    def __init__(self, module_db_path = None):
+    def __init__(self):
         identity = os.path.abspath(__file__)
+        self.module_db_path = []
 
-        if (module_db_path is None):
+        # try to use PYENV_PATH to get a database
+        pyenv_path = os.getenv("PYENV_PATH")
+        if (pyenv_path is not None):
+            self.module_db_path = pyenv_path.split(os.pathsep)
+        else:
             # use __file__ to figure out where we are.
             pyenv_root = os.path.dirname(os.path.dirname(identity))
-            module_db_path = os.path.join(pyenv_root, "modules")
+            self.module_db_path = [os.path.join(pyenv_root, "modules")]
 
-        self.module_db_path = module_db_path.split(os.pathsep)
         self.database_cache = dict()
 
 
