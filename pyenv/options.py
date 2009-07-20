@@ -19,9 +19,11 @@ class munge_parser(object):
 
     def __enter__(self):
         def add_option(opt_str, *args, **kwargs):
-            if ("dest" not in kwargs):
+            if ('dest' not in kwargs):
                 raise OptionError("all options must have an explicit destination")
 
+            if ('metavar' not in kwargs):
+                kwargs['metavar'] = kwargs['dest'].upper()
             kwargs['dest'] = "%s%s" % (self.dest_prefix, kwargs['dest'])
 
             return orig_add_option(opt_str, *args, **kwargs)
