@@ -15,7 +15,7 @@ def worker():
         # no shell at this point, so we've already dumped everything to stderr.  just reraise.
         raise
 
-    # TODO: set up a better module database, based on PYENV_PATH
+    # set up module database.
     mdb = pyenv.ModuleDatabase()
 
     # figure out which shell...
@@ -39,24 +39,34 @@ def worker():
     wlog = pyenv.WarningLog.get_logger()
 
     for log_msg in wlog.get_log():
-        shell.message(log_msg)
+        shell.write("%s\n" % log_msg)
 
-    return shell.dump_state()
+    shell_state = shell.dump_state()
+
+    if (pyenv.options.TopLevelOptions.dump):
+        sys.stderr.write("\n".join(shell_state) + "\n")
+
+    return shell_state
 
 
 
 def main():
+    name = None
     try:
         shell_state = worker()
 
-        # TODO: write this to a temp file.
-        sys.stdout.write("\n".join(shell_state) + "\n")
+        # write this to a temp file.
+        tfh = tempfile.NamedTemporaryFile(delete=False)
+        tfh.write("\n".join(shell_state) + "\n")
+        name = tfh.name
+        tfh.close()
     except pyenv.OptionParsingError as e:
         # ignore the error if it gets this far up.
         pass
     finally:
-        # TODO: write the name of the temp file to the shell.
-        pass
+        # write the name of the temp file to the shell.
+        if (name is not None):
+            sys.stdout.write("%s\n" % name)
 
 if __name__ == "__main__":
     main()

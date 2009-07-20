@@ -60,10 +60,14 @@ class TopLevelOptions(object):
 
         # define a function to add options
         with munge_parser(parser, dest_prefix, sys.stderr) as ctxt:
-            # populate parser here, with all dests starting with dest_prefix.
+            # populate parser here.
             parser.add_option("-s", "--shell", type="choice",
                               choices=valid_shells, 
                               dest="shell")
+            parser.add_option("--dump", action="store_true",
+                              dest="dump",
+                              help="dump all the commands to be executed to console "
+                              "(stderr) as well")
 
             # stop when the first non-option argument
             # is encountered.

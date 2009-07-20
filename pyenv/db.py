@@ -35,7 +35,7 @@ class ModuleDatabase(object):
                     if (not name.lower().endswith(".py")):
                         continue
 
-                    module_fullpath = os.path.join(root, name)
+                    module_fullpath = os.path.abspath(os.path.join(root, name))
 
                     # skip over files that have multiple .s, since the splitting won't
                     # work properly.
@@ -47,7 +47,16 @@ class ModuleDatabase(object):
 
                     stripped_path = module_fullpath[len(path) + 1:-3]
 
-                    module_name = '.'.join(os.path.split(stripped_path))
+                    splitted = list()
+                    while (True):
+                        split = os.path.split(stripped_path)
+                        if (split[1] == ""):
+                            break
+                        splitted.append(split[1])
+                        stripped_path = split[0]
+                    splitted.reverse()
+
+                    module_name = '.'.join(splitted)
 
                     # already exists, keep going.
                     if (module_name in self.database_cache):
