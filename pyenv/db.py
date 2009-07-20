@@ -64,7 +64,7 @@ class ModuleDatabase(object):
         module_relpath = "%s%s" % (os.path.join(*module_name.split(".")),
                                    ".py")
 
-        for path in self.module_db_path.split(os.pathsep):
+        for path in self.module_db_path:
             module_fullpath = os.path.join(path, module_relpath)
             if (os.access(module_fullpath, os.F_OK)):
                 self.database_cache[module_name] = module_fullpath

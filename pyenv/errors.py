@@ -41,6 +41,10 @@ class ShellNotImplementedError(ShellError):
         ShellError.__init__(self, "method not implemented")
 
 
+class ShellReverseOperationError(Exception):
+    pass
+
+
 class Log(object):
     def __init__(self):
         self.__log = []

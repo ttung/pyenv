@@ -10,7 +10,7 @@ def worker():
     all_actions = pyenv.Actions.get_all_actions()
 
     try:
-        pyenv.options.TopLevelOptions.parse(sys.argv, all_actions, pyenv.shell_mapper.keys())
+        pyenv.options.TopLevelOptions.parse(sys.argv[1:], all_actions, pyenv.shell_mapper.keys())
     except pyenv.OptionParsingError as e:
         # no shell at this point, so we've already dumped everything to stderr.  just reraise.
         raise
@@ -28,7 +28,11 @@ def worker():
 
     assert(action_requested in all_actions)
     action_processor = all_actions[action_requested]
-    action_processor(action_arguments, env, shell, mdb)
+    try:
+        action_processor(action_requested, action_arguments, env, shell, mdb)
+    except pyenv.OptionParsingError as e:
+        # we have a shell, so just clean up normally.
+        pass
 
     env.shutdown()
 
