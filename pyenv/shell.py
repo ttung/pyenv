@@ -160,7 +160,10 @@ class TcshShell(Shell):
             if (pathtype in self.original_paths and
                 pathvalue == self.original_paths[pathtype]):
                 continue
-            cmds.append("setenv %s '%s'" % (pathtype, os.pathsep.join(pathvalue)))
+            if (len(pathvalue) != 0):
+                cmds.append("setenv %s '%s'" % (pathtype, os.pathsep.join(pathvalue)))
+            else:
+                cmds.append("unsetenv %s" % (pathtype))
 
         for name, value in self.aliases.items():
             if (value is None):
