@@ -1,4 +1,4 @@
-# -*- Mode: Python -*- 
+# -*- Mode: Python -*-
 
 import sys
 from errors import *
@@ -56,6 +56,9 @@ class Environment(object):
 
         # preload, then load.
         dependencies = module.preload(self)
+        for dependency in dependencies:
+            if (dependency not in self.loaded_modules):
+                self.load_module_by_name(dependency)
 
         module.load(self, self.shell)
 
@@ -113,7 +116,7 @@ class Environment(object):
             raise ModuleUnloadError("Module %s not loaded" % module_name)
         elif (module_name in self.dependencies and
               len(self.dependencies[module_name]) != 0):
-            raise ModuleUnloadError("Module(s) (%s) still depend on %s." % 
+            raise ModuleUnloadError("Module(s) (%s) still depend on %s." %
                                     (", ".join(self.dependencies[module_name]),
                                      module_name))
         elif (self.db.find_module(module_name)):
