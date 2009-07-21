@@ -1,4 +1,5 @@
 #!/usr/bin/env python2.6
+# -*- Mode: python -*-
 
 import sys
 import tempfile
@@ -43,8 +44,12 @@ def worker():
 
     shell_state = shell.dump_state()
 
-    if (pyenv.options.TopLevelOptions.dump):
+    if (pyenv.options.TopLevelOptions.dump or pyenv.options.TopLevelOptions.dry_run):
         sys.stderr.write("\n".join(shell_state) + "\n")
+
+    if (pyenv.options.TopLevelOptions.dry_run):
+        raise pyenv.OptionParsingError("not really an error, we just don't want to execute "
+                                       "a dry run")
 
     return shell_state
 

@@ -62,12 +62,14 @@ class TopLevelOptions(object):
         with munge_parser(parser, dest_prefix, sys.stderr) as ctxt:
             # populate parser here.
             parser.add_option("-s", "--shell", type="choice",
-                              choices=valid_shells, 
+                              choices=valid_shells,
                               dest="shell")
-            parser.add_option("--dump", action="store_true",
-                              dest="dump",
+            parser.add_option("--dump", action="store_true", dest="dump",
                               help="dump all the commands to be executed to console "
                               "(stderr) as well")
+            parser.add_option("--dry-run", action="store_true", dest="dry_run",
+                              help="don't actually make the change, but dumps all the "
+                              "commands to be executed to console")
 
             # stop when the first non-option argument
             # is encountered.
