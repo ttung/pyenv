@@ -3,6 +3,8 @@
 import os
 import sys
 
+from errors import *
+
 # this should be subclassed by various shell implementations.
 class Shell(object):
     VALIDATE_PATH = 1           # validates that the path exists, silently fail
@@ -35,7 +37,7 @@ class Shell(object):
 
         if (check_path and
             not os.access(path, os.X_OK)):
-            if (check_path == ENFORCE_PATH):
+            if (check_path == Shell.ENFORCE_PATH):
                 raise ModuleLoadError("Path %s does not exist" % path)
             return
 
@@ -53,7 +55,7 @@ class Shell(object):
 
         if (check_path and
             not os.access(path, os.X_OK)):
-            if (check_path == ENFORCE_PATH):
+            if (check_path == Shell.ENFORCE_PATH):
                 raise ModuleLoadError("Path %s does not exist" % path)
             return
 
