@@ -93,8 +93,11 @@ class Environment(object):
         if (module_name in self.dependencies):
             del self.dependencies[module_name]
 
-        for module_name, dependency_set in self.dependencies:
-            dependency_set.remove(module_name)
+        for dependency_name, dependency_set in self.dependencies.items():
+            if (module_name in dependency_set):
+                dependency_set.remove(module_name)
+            if (len(dependency_set) == 0):
+                del self.dependencies[dependency_name]
 
         self.need_env_dump = True
 
