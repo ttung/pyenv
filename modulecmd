@@ -66,8 +66,6 @@ def main():
 
         tfh.write("\n".join(shell_state) + "\n")
 
-        # this should be done in a platform-independent way...
-        tfh.write("rm -f %s\n" % name)
         tfh.close()
     except pyenv.OptionParsingError as e:
         # ignore the error if it gets this far up.
