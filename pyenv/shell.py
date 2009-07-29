@@ -5,12 +5,15 @@ import sys
 
 from errors import *
 
-# this should be subclassed by various shell implementations.
-class Shell(object):
+class ShellConstants(object):
+    NOT_PATH = 0                # not a path.  ignore.
     VALIDATE_PATH = 1           # validates that the path exists, silently fail
     ENFORCE_PATH  = 2           # enforces that the path exists, raise an exception if it
                                 # does not.
 
+
+# this should be subclassed by various shell implementations.
+class Shell(object):
     def __init__(self):
         # load up all the path settings.
 
@@ -21,6 +24,13 @@ class Shell(object):
                                     for key, value in os.environ.items()
                                     if key.endswith("PATH")])
 
+        self.compiler_flags = dict([(key, value.split())
+                                    for key, value in os.environ.items()
+                                    if key.endswith("FLAGS")])
+        self.original_compiler_flags = dict([(key, value.split())
+                                             for key, value in os.environ.items()
+                                             if key.endswith("FLAGS")])
+
         self.aliases = dict()
         self.shell_variables = dict()
         self.environment_variables = dict()
@@ -29,44 +39,41 @@ class Shell(object):
         self.reverse_op = False
 
 
-    # this should prepend a path component from one of the paths (e.g., PATH,
-    # LD_LIBRARY_PATH).  at the end, path_dump will be called to set the final paths.
-    def prepend_path(self, path, path_type = "PATH", check_path = VALIDATE_PATH):
-        if (self.reverse_op):
-            return self.remove_path(path, path_type, internal_call = True)
+    def path_decorate(f):
+        def inner(self, path, path_type = "PATH", check_path = ShellConstants.VALIDATE_PATH):
+            if (self.reverse_op):
+                return self.remove_path(path, path_type, internal_call = True)
 
-        if (check_path and
-            not os.access(path, os.X_OK)):
-            if (check_path == Shell.ENFORCE_PATH):
-                raise ModuleLoadError("Path %s does not exist" % path)
-            return
+            if (check_path and
+                not os.access(path, os.X_OK)):
+                if (check_path == ShellConstants.ENFORCE_PATH):
+                    raise ModuleLoadError("Path %s does not exist" % path)
+                return
 
-        if (path_type not in self.paths):
-            self.paths[path_type] = []
+            if (path_type not in self.paths):
+                self.paths[path_type] = []
 
+            f(self, path, path_type)
+
+        return inner
+
+
+    # this should prepend a path component to one of the paths (e.g., PATH,
+    # LD_LIBRARY_PATH).  at the end, dump_state will be called to set the final paths.
+    @path_decorate
+    def prepend_path(self, path, path_type):
         self.paths[path_type].insert(0, path)
 
 
-    # this should append a path component from one of the paths (e.g., PATH,
-    # LD_LIBRARY_PATH).  at the end, path_dump will be called to set the final paths.
-    def append_path(self, path, path_type = "PATH", check_path = VALIDATE_PATH):
-        if (self.reverse_op):
-            return self.remove_path(path, path_type, internal_call = True)
-
-        if (check_path and
-            not os.access(path, os.X_OK)):
-            if (check_path == Shell.ENFORCE_PATH):
-                raise ModuleLoadError("Path %s does not exist" % path)
-            return
-
-        if (path_type not in self.paths):
-            self.paths[path_type] = []
-
+    # this should append a path component to one of the paths (e.g., PATH,
+    # LD_LIBRARY_PATH).  at the end, dump_state will be called to set the final paths.
+    @path_decorate
+    def append_path(self, path, path_type):
         self.paths[path_type].append(path)
 
 
     # this should remove a path component from one of the paths (e.g., PATH,
-    # LD_LIBRARY_PATH).  at the end, path_dump will be called to set the final paths.
+    # LD_LIBRARY_PATH).  at the end, dump_state will be called to set the final paths.
     def remove_path(self, path, path_type = "PATH", internal_call = False):
         if (not internal_call and
             self.reverse_op):
@@ -77,6 +84,57 @@ class Shell(object):
 
         try:
             self.paths[path_type].remove(path)
+        except ValueError:
+            pass
+
+
+    def compiler_flags_decorate(f):
+        def inner(self, flag, flag_type, prefix = "", path_checking = ShellConstants.NOT_PATH):
+            if (self.reverse_op):
+                return self.remove_compiler_flag(flag, flag_type, prefix = prefix,
+                                                 internal_call = True)
+
+            if (path_checking != ShellConstants.NOT_PATH and
+                not os.access(flag, os.X_OK)):
+                if (path_checking == ShellConstants.ENFORCE_PATH):
+                    raise ModuleLoadError("Path %s does not exist" % flag)
+                return
+
+            if (flag_type not in self.compiler_flags):
+                self.compiler_flags[flag_type] = []
+
+            f(self, "%s%s" % (prefix, flag), flag_type)
+
+        return inner
+
+
+    # this should prepend a compiler flag to one of the flag groups (e.g., CPPFLAGS, LDFLAGS).
+    # at the end, dump_state will be called to set the final flags.
+    @compiler_flags_decorate
+    def prepend_compiler_flag(self, flag_value, flag_type):
+        self.compiler_flags[flag_type].insert(0, flag_value)
+
+
+    # this should prepend a compiler flag to one of the flag groups (e.g., CPPFLAGS,
+    # LDFLAGS).  at the end, dump_state will be called to set the final flags.
+    @compiler_flags_decorate
+    def append_compiler_flag(self, flag_value, flag_type):
+        self.compiler_flags[flag_type].append(flag_value)
+
+
+    # this should remove a compiler flag from one of the flag groups (e.g., CPPFLAGS,
+    # LDFLAGS).  at the end, dump_state will be called to set the final paths.
+    def remove_compiler_flag(self, flag, flag_type = "PATH", prefix = "",
+                             internal_call = False):
+        if (not internal_call and
+            self.reverse_op):
+            raise ShellReverseOperationError("Cannot reverse remove_compile_flag")
+
+        if (flag_type not in self.compiler_flags):
+            return
+
+        try:
+            self.compiler_flags[flag_type].remove("%s%s" % (prefix, flag))
         except ValueError:
             pass
 
@@ -158,14 +216,23 @@ class TcshShell(Shell):
 
         cmds = []
 
-        for pathtype, pathvalue in self.paths.items():
-            if (pathtype in self.original_paths and
-                pathvalue == self.original_paths[pathtype]):
+        for path_type, path_value in self.paths.items():
+            if (path_type in self.original_paths and
+                path_value == self.original_paths[path_type]):
                 continue
-            if (len(pathvalue) != 0):
-                cmds.append("setenv %s '%s'" % (pathtype, os.pathsep.join(pathvalue)))
+            if (len(path_value) != 0):
+                cmds.append("setenv %s '%s'" % (path_type, os.pathsep.join(path_value)))
             else:
-                cmds.append("unsetenv %s" % (pathtype))
+                cmds.append("unsetenv %s" % (path_type))
+
+        for compiler_flag_type, compiler_flag_value in self.compiler_flags.items():
+            if (compiler_flag_type in self.original_compiler_flags and
+                compiler_flag_value == self.original_compiler_flags[compiler_flag_type]):
+                continue
+            if (len(compiler_flag_value) != 0):
+                cmds.append("setenv %s '%s'" % (compiler_flag_type, " ".join(compiler_flag_value)))
+            else:
+                cmds.append("unsetenv %s" % (compiler_flag_type))
 
         for name, value in self.aliases.items():
             if (value is None):
