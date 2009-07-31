@@ -57,15 +57,19 @@ class Environment(object):
         # preload, then load.
         dependencies = module.preload(self)
 
-        module.load(self, self.shell)
-
-        # update the loaded modules and the dependency graph.
-        self.loaded_modules.add(module_name)
         for dependency in dependencies:
+            if (dependency not in self.loaded_modules):
+                self.load_module_by_name(dependency)
+
             if (dependency not in self.dependencies):
                 self.dependencies[dependency] = set()
 
             self.dependencies[dependency].add(module_name)
+
+        module.load(self, self.shell)
+
+        # update the loaded modules and the dependency graph.
+        self.loaded_modules.add(module_name)
 
         self.need_env_dump = True
 
@@ -90,7 +94,7 @@ class Environment(object):
         if (module_name in self.dependencies):
             del self.dependencies[module_name]
 
-        for module_name, dependency_set in self.dependencies:
+        for dependency_name, dependency_set in self.dependencies.items():
             dependency_set.remove(module_name)
 
         self.need_env_dump = True

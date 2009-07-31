@@ -3,6 +3,8 @@
 import os
 import sys
 
+from errors import *
+
 class ShellConstants(object):
     NOT_PATH = 0                # not a path.  ignore.
     VALIDATE_PATH = 1           # validates that the path exists, silently fail
@@ -38,7 +40,7 @@ class Shell(object):
 
 
     def path_decorate(f):
-        def inner(self, path, path_type = "PATH", check_path = ShellConstants.VALIDATE_PATH):
+        def inner(self, path, path_type = "PATH", check_path = ShellConstants.ENFORCE_PATH):
             if (self.reverse_op):
                 return self.remove_path(path, path_type, internal_call = True)
 
