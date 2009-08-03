@@ -128,5 +128,7 @@ class Actions(object):
 
     @staticmethod
     def avail(action, args, env, shell, mdb):
-        for module in mdb.get_all_modules():
-            shell.write(module)
+        all_modules = mdb.get_all_modules()
+        all_modules.sort()
+        [shell.write(module)
+         for module in all_modules]
