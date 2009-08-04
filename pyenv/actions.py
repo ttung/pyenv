@@ -71,8 +71,10 @@ class Actions(object):
 
     @staticmethod
     def loaded(action, args, env, shell, mdb):
-        for module in env.loaded_modules:
-            shell.write(module)
+        all_loaded_modules = list(env.loaded_modules)
+        all_loaded_modules.sort()
+        [shell.write(module)
+         for module in all_loaded_modules]
 
 
     @staticmethod

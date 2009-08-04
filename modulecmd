@@ -20,7 +20,7 @@ def worker():
     mdb = pyenv.ModuleDatabase()
 
     # figure out which shell...
-    shell = pyenv.shell_mapper[pyenv.options.TopLevelOptions.shell]()
+    shell = pyenv.shell_mapper[pyenv.options.TopLevelOptions.shell](pyenv.options.TopLevelOptions)
 
     env = pyenv.Environment(shell, mdb)
 
@@ -69,7 +69,7 @@ def main():
         tfh.close()
     except pyenv.OptionParsingError as e:
         # ignore the error if it gets this far up.
-        pass
+        sys.exit(1)
     finally:
         # write the name of the temp file to the shell.
         if (name is not None):

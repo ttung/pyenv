@@ -70,6 +70,10 @@ class TopLevelOptions(object):
             parser.add_option("--dry-run", action="store_true", dest="dry_run",
                               help="don't actually make the change, but dumps all the "
                               "commands to be executed to console")
+            parser.add_option("--raw-msg-dump", action="store_true", dest="raw_msg_dump",
+                              help="dump messages verbatim instead of generating "
+                              "commands to dump them (may be ignored by different shell "
+                              "implementations)")
 
             # stop when the first non-option argument
             # is encountered.

@@ -14,7 +14,7 @@ class ShellConstants(object):
 
 # this should be subclassed by various shell implementations.
 class Shell(object):
-    def __init__(self):
+    def __init__(self, options):
         # load up all the path settings.
 
         self.paths = dict([(key, value.split(os.pathsep))
@@ -38,6 +38,7 @@ class Shell(object):
 
         self.reverse_op = False
 
+        self.options = options
 
     def path_decorate(f):
         def inner(self, path, path_type = "PATH", check_path = ShellConstants.ENFORCE_PATH):
@@ -264,6 +265,55 @@ class TcshShell(Shell):
         return cmds
 
 
+class Elisp(Shell):
+    def dump_state(self):
+        import os
+
+        cmds = []
+
+        for path_type, path_value in self.paths.items():
+            if (path_type in self.original_paths and
+                path_value == self.original_paths[path_type]):
+                continue
+            if (len(path_value) != 0):
+                cmds.append("(setenv \"%s\" \"%s\")" % (path_type, os.pathsep.join(path_value)))
+            else:
+                cmds.append("(setenv \"%s\")" % (path_type))
+
+        for compiler_flag_type, compiler_flag_value in self.compiler_flags.items():
+            if (compiler_flag_type in self.original_compiler_flags and
+                compiler_flag_value == self.original_compiler_flags[compiler_flag_type]):
+                continue
+            if (len(compiler_flag_value) != 0):
+                cmds.append("(setenv \"%s\" \"%s\")" % (compiler_flag_type, " ".join(compiler_flag_value)))
+            else:
+                cmds.append("(setenv \"%s\")" % (compiler_flag_type))
+
+        for name, value in self.aliases.items():
+            # uh, we should probably figure out something useful to do here.
+            pass
+
+        for name, value in self.shell_variables.items():
+            # uh, we should probably figure out something useful to do here.
+            pass
+
+        for name, value in self.environment_variables.items():
+            if (value is None):
+                cmds.append("(setenv \"%s\")" % name)
+            else:
+                # TODO: escaping the values will be useful to do.
+                cmds.append("(setenv \"%s\" \"%s\")" % (name, value))
+
+        if (len(self.messages) != 0):
+            if (self.options.raw_msg_dump):
+                cmds.append("\n".join(self.messages))
+            else:
+                cmds.append("(message \"%s\")" % "\\n".join(self.messages))
+
+        return cmds
+
+
 shell_mapper = {
-    "tcsh": TcshShell
+    "tcsh": TcshShell,
+    "elisp": Elisp,
 }
