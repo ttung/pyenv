@@ -132,5 +132,4 @@ class Actions(object):
     def avail(action, args, env, shell, mdb):
         all_modules = mdb.get_all_modules()
         all_modules.sort()
-        [shell.write(module)
-         for module in all_modules]
+        shell.write("\n".join(all_modules))
