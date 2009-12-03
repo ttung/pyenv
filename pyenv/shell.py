@@ -177,7 +177,7 @@ class Shell(object):
     # spawned by the shell.
     def add_env(self, env_name, value):
         if (self.reverse_op):
-            return self.remove_shell_variable(shell_env_name, internal_call = True)
+            return self.remove_env(env_name, internal_call = True)
 
         self.environment_variables[env_name] = value
 
