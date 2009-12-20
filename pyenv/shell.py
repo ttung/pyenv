@@ -89,6 +89,15 @@ class Shell(object):
             pass
 
 
+    # this should reset one of the paths (e.g., PATH, LD_LIBRARY_PATH).  at the end,
+    # dump_state will be called to set the final paths.
+    def reset_path(self, path_type = "PATH"):
+        if (self.reverse_op):
+            raise ShellReverseOperationError("Cannot reverse reset_path")
+
+        self.paths[path_type] = []
+
+
     def compiler_flags_decorate(f):
         def inner(self, flag, flag_type, prefix = "", path_checking = ShellConstants.NOT_PATH):
             if (self.reverse_op):
@@ -125,7 +134,7 @@ class Shell(object):
 
     # this should remove a compiler flag from one of the flag groups (e.g., CPPFLAGS,
     # LDFLAGS).  at the end, dump_state will be called to set the final paths.
-    def remove_compiler_flag(self, flag, flag_type = "PATH", prefix = "",
+    def remove_compiler_flag(self, flag, flag_type, prefix = "",
                              internal_call = False):
         if (not internal_call and
             self.reverse_op):
@@ -138,6 +147,14 @@ class Shell(object):
             self.compiler_flags[flag_type].remove("%s%s" % (prefix, flag))
         except ValueError:
             pass
+
+
+    # this should reset one of the compiler flag groups (e.g., CPPFLAGS, LDFLAGS).
+    def reset_compiler_flag(self, flag_type):
+        if (self.reverse_op):
+            raise ShellReverseOperationError("Cannot reverse reset_compiler_flag")
+
+        self.compiler_flags[flag_type] = []
 
 
     # this should add an alias
@@ -265,6 +282,60 @@ class TcshShell(Shell):
         return cmds
 
 
+class BashShell(Shell):
+    def dump_state(self):
+        import os
+
+        cmds = []
+
+        for path_type, path_value in self.paths.items():
+            if (path_type in self.original_paths and
+                path_value == self.original_paths[path_type]):
+                continue
+            if (len(path_value) != 0):
+                cmds.append("export %s='%s'" % (path_type, os.pathsep.join(path_value)))
+            else:
+                cmds.append("unset %s" % (path_type))
+
+        for compiler_flag_type, compiler_flag_value in self.compiler_flags.items():
+            if (compiler_flag_type in self.original_compiler_flags and
+                compiler_flag_value == self.original_compiler_flags[compiler_flag_type]):
+                continue
+            if (len(compiler_flag_value) != 0):
+                cmds.append("export %s='%s'" % (compiler_flag_type, " ".join(compiler_flag_value)))
+            else:
+                cmds.append("unset %s" % (compiler_flag_type))
+
+        for name, value in self.aliases.items():
+            if (value is None):
+                cmds.append("unalias %s" % name)
+            else:
+                # TODO: escaping the values will be useful to do.
+                cmds.append("alias %s '%s'" % (name, value))
+
+        for name, value in self.shell_variables.items():
+            if (value is None):
+                cmds.append("unset %s" % name)
+            else:
+                # TODO: escaping the values will be useful to do.
+                cmds.append("%s='%s'" % (name, value))
+
+        for name, value in self.environment_variables.items():
+            if (value is None):
+                cmds.append("unset %s" % name)
+            else:
+                # TODO: escaping the values will be useful to do.
+                cmds.append("export %s='%s'" % (name, value))
+
+        for message in self.messages:
+            # TODO: escaping the messages will be useful to do.
+            msg_lines = message.split("\n")
+            for msg_line in msg_lines:
+                cmds.append("echo '%s'" % msg_line)
+
+        return cmds
+
+
 class Elisp(Shell):
     def dump_state(self):
         import os
@@ -314,6 +385,7 @@ class Elisp(Shell):
 
 
 shell_mapper = {
+    "bash": BashShell,
     "tcsh": TcshShell,
     "elisp": Elisp,
 }
