@@ -331,7 +331,7 @@ class BashShell(Shell):
             # TODO: escaping the messages will be useful to do.
             msg_lines = message.split("\n")
             for msg_line in msg_lines:
-                cmds.append("echo '%s'" % msg_line)
+                cmds.append("echo '%s'" % msg_line.replace("'", "'\\''"))
 
         return cmds
 
