@@ -107,8 +107,9 @@ class Environment(object):
 
 
     # load a module by name.  may raise ModuleLoadError.
-    def load_module_by_name(self, module_name):
-        if (module_name in self.loaded_modules):
+    def load_module_by_name(self, module_name, force=False):
+        if (force == False and
+            module_name in self.loaded_modules):
             raise ModuleLoadError("Module %s already loaded" % module_name)
         elif (self.db.find_module(module_name)):
             module = self.db.load_module(module_name)

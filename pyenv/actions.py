@@ -29,6 +29,10 @@ class Actions(object):
                               help="prefix to prepend to module names; "
                               "should probably end with \".\"",
                               dest="prefix")
+            parser.add_option("--force", action="store_true",
+                              help="forcibly load the module, even if it is "
+                              "already loaded",
+                              dest="force")
             parser.set_defaults(prefix="")
 
 
@@ -64,7 +68,7 @@ class Actions(object):
         for module_name in options.ActionOptions.args:
             try:
                 module_name = "%s%s" % (options.ActionOptions.prefix, module_name)
-                env.load_module_by_name(module_name)
+                env.load_module_by_name(module_name, options.ActionOptions.force)
             except ModuleLoadError as e:
                 wlog.log(str(e))
 
