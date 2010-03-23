@@ -60,10 +60,6 @@ class Environment(object):
             if (dependency not in self.loaded_modules):
                 self.load_module_by_name(dependency)
 
-        for dependency in dependencies:
-            if (dependency not in self.loaded_modules):
-                self.load_module_by_name(dependency)
-
             if (dependency not in self.dependencies):
                 self.dependencies[dependency] = set()
 

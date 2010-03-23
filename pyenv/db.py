@@ -94,9 +94,14 @@ class ModuleDatabase(object):
         short_module_name = module_name.split(".")[-1]
 
         old_sys_path = sys.path[:]
-        sys.path.insert(0, os.path.dirname(module_path))
+        try:
+            sys.path.insert(0, os.path.dirname(module_path))
+            module = __import__(short_module_name)
+            sys.modules[module_name] = sys.modules[short_module_name]
+            del sys.modules[short_module_name]
+        finally:
+            sys.path = old_sys_path
 
-        module = __import__(short_module_name, globals(), locals(), [], -1)
         return module.Module(module_name)
 
 
