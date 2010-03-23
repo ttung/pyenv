@@ -40,6 +40,31 @@ class Shell(object):
 
         self.options = options
 
+        self.state_stack = []
+
+
+    # preserve a copy of the current state (paths, env) onto a stack.
+    def push(self):
+        import copy
+
+        self.state_stack.append(copy.deepcopy( (self.paths,
+                                                self.compiler_flags,
+                                                self.aliases,
+                                                self.shell_variables,
+                                                self.environment_variables,
+                                                self.messages) ))
+
+
+    # restores a copy of the current state (paths, env) from a stack.
+    def pop(self):
+        (self.paths,
+         self.compiler_flags,
+         self.aliases,
+         self.shell_variables,
+         self.environment_variables,
+         self.messages) = self.state_stack.pop()
+
+
     def path_decorate(f):
         def inner(self, path, path_type = "PATH", check_path = ShellConstants.ENFORCE_PATH):
             if (self.reverse_op):

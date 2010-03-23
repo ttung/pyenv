@@ -1,4 +1,4 @@
-# -*- Mode: Python -*- 
+# -*- Mode: Python -*-
 
 import sys
 
@@ -68,9 +68,11 @@ class Actions(object):
         for module_name in options.ActionOptions.args:
             try:
                 module_name = "%s%s" % (options.ActionOptions.prefix, module_name)
+                shell.push()
                 env.load_module_by_name(module_name, options.ActionOptions.force)
             except ModuleLoadError as e:
                 wlog.log(str(e))
+                shell.pop()
 
 
     @staticmethod
