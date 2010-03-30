@@ -130,6 +130,17 @@ class Environment(object):
             raise ModuleUnloadError("Cannot find module %s" % module_name)
 
 
+    # test whether or not a module can be unloaded.
+    def okay_to_unload(self, module_name):
+        if (module_name not in self.loaded_modules):
+            raise ModuleUnloadError("Module %s not loaded" % module_name)
+        elif (module_name in self.dependencies and
+              len(self.dependencies[module_name]) != 0):
+            return False
+        else:
+            return True
+
+
     # swap two modules.  raise ModuleUnloadError if we can't complete the swap.
     def swap_module(self, outgoing_module, incoming_module):
         pass

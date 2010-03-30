@@ -126,12 +126,29 @@ class Actions(object):
                                     action_optparse_check = custom_optparse_checker,
                                     action_optparse_help_generator = custom_format_help_generator)
 
-        for module_name in options.ActionOptions.args:
-            try:
-                module_name = "%s%s" % (options.ActionOptions.prefix, module_name)
-                env.unload_module_by_name(module_name)
-            except ModuleLoadError as e:
-                wlog.log(str(e))
+        modules_to_unload = set(options.ActionOptions.args)
+
+        last_round = False
+        while (len(modules_to_unload) != 0):
+            unload_this_round = [module_name
+                                 for module_name in modules_to_unload
+                                 if env.okay_to_unload(module_name)]
+
+            if (len(unload_this_round) == 0):
+                # nothing can be unloaded this round, so generate all the error messages
+                # and quit.
+                last_round = True
+                unload_this_round = modules_to_unload.copy()
+
+            for module_name in unload_this_round:
+                try:
+                    module_name = "%s%s" % (options.ActionOptions.prefix, module_name)
+                    env.unload_module_by_name(module_name)
+                except ModuleUnloadError as e:
+                    modules_to_unload.remove(module_name)
+                    wlog.log(str(e))
+                else:
+                    modules_to_unload.remove(module_name)
 
 
     @staticmethod
