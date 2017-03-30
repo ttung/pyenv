@@ -31,6 +31,7 @@ class ModuleDatabase(object):
     # name.  if that function returns False, then it is not added to the db cache.
     def populate_db_cache(self, filter = None):
         for path in self.module_db_path:
+            path = os.path.abspath(path)
             for root, dirs, files in os.walk(path, followlinks = True):
                 for name in files:
                     # only .py files.
