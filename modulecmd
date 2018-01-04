@@ -11,7 +11,7 @@ def worker():
     all_actions = pyenv.Actions.get_all_actions()
 
     try:
-        pyenv.options.TopLevelOptions.parse(sys.argv[1:], all_actions, pyenv.shell_mapper.keys())
+        pyenv.options.TopLevelOptions.parse(sys.argv[1:], all_actions, list(pyenv.shell_mapper.keys()))
     except pyenv.OptionParsingError as e:
         # no shell at this point, so we've already dumped everything to stderr.  just reraise.
         raise
@@ -64,7 +64,7 @@ def main():
         tfh = tempfile.NamedTemporaryFile(delete=False)
         name = tfh.name
 
-        tfh.write("\n".join(shell_state) + "\n")
+        tfh.write(("\n".join(shell_state) + "\n").encode("utf-8"))
 
         tfh.close()
     except pyenv.OptionParsingError as e:

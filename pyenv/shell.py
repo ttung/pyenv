@@ -3,7 +3,7 @@
 import os
 import sys
 
-from errors import *
+from .errors import *
 
 class ShellConstants(object):
     NOT_PATH = 0                # not a path.  ignore.

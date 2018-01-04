@@ -2,11 +2,11 @@
 
 import sys
 
-import options
-from errors import *
-from db import ModuleDatabase
-from environment import Environment
-from shell import shell_mapper
+from . import options
+from .errors import *
+from .db import ModuleDatabase
+from .environment import Environment
+from .shell import shell_mapper
 
 class Actions(object):
     @classmethod

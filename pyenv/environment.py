@@ -1,7 +1,7 @@
 # -*- Mode: Python -*-
 
 import sys
-from errors import *
+from .errors import *
 
 class Environment(object):
     def __init__(self, shell, db):
@@ -29,7 +29,7 @@ class Environment(object):
                 env_str = ''.join(env_directory)
                 env_str_decoded = base64.b64decode(env_str)
                 self.loaded_modules, self.dependencies = pickle.loads(env_str_decoded)
-            except:
+            except Exception as ex:
                 sys.stderr.write("Unable to decode prior environment; discarding.\n")
                 ix = 0
 
@@ -161,7 +161,7 @@ class Environment(object):
 
             # pickle the state and write it out to the environment.
             pickled = pickle.dumps((self.loaded_modules, self.dependencies), -1)
-            encoded = base64.b64encode(pickled)
+            encoded = base64.b64encode(pickled).decode("latin-1")
             chunks = [encoded[ix:ix + max_chunk_size]
                       for ix in range(0, len(encoded), max_chunk_size)]
 

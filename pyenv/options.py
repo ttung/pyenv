@@ -2,7 +2,7 @@
 
 import sys
 
-from errors import *
+from .errors import *
 
 def escape_hatch(arg = 0, msg = None):
     if (msg is not None):
@@ -109,7 +109,7 @@ class TopLevelOptions(object):
                 TopLevelOptions.action = leftover[0]
                 if (TopLevelOptions.action not in valid_actions):
                     raise OptionParsingError("invalid action specified...")
-            except OptionParsingError, e:
+            except OptionParsingError as e:
                 parser.print_help()
                 raise
 
