@@ -98,8 +98,9 @@ class ModuleDatabase(object):
         try:
             sys.path.insert(0, os.path.dirname(module_path))
             module = __import__(short_module_name)
-            sys.modules[module_name] = sys.modules[short_module_name]
-            del sys.modules[short_module_name]
+            if module_name != short_module_name:
+                sys.modules[module_name] = sys.modules[short_module_name]
+                del sys.modules[short_module_name]
         finally:
             sys.path = old_sys_path
 

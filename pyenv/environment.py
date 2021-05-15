@@ -30,7 +30,7 @@ class Environment(object):
                 env_str_decoded = base64.b64decode(env_str)
                 self.loaded_modules, self.dependencies = pickle.loads(env_str_decoded)
             except Exception as ex:
-                sys.stderr.write("Unable to decode prior environment; discarding.\n")
+                sys.stderr.write("Unable to decode prior environment ({}); discarding.\n".format(ex))
                 ix = 0
 
         if (ix == 0):
@@ -160,7 +160,7 @@ class Environment(object):
                 self.shell.remove_env(env_name)
 
             # pickle the state and write it out to the environment.
-            pickled = pickle.dumps((self.loaded_modules, self.dependencies), -1)
+            pickled = pickle.dumps((self.loaded_modules, self.dependencies), 2)
             encoded = base64.b64encode(pickled).decode("latin-1")
             chunks = [encoded[ix:ix + max_chunk_size]
                       for ix in range(0, len(encoded), max_chunk_size)]
